@@ -274,7 +274,8 @@ describe("reconcileStreamedWithDb", () => {
     // reconciliationKey only compares the first 200 chars, so a stream cut
     // off mid-answer (dropped chunk, or the open gatewayCompletionSuffix
     // bug) still matches its DB row; the merge must adopt the full text.
-    const full = "x".repeat(220) + " the rest of the answer that streamed short.";
+    const full =
+      "x".repeat(220) + " the rest of the answer that streamed short.";
     const truncated = full.slice(0, 200);
 
     const streamed: ChatMessage[] = [STREAMED_AGENT(truncated, "a-1")];
@@ -288,13 +289,34 @@ describe("reconcileStreamedWithDb", () => {
   });
 
   it("keeps the streamed content when it is not shorter than the DB row (no needless overwrite)", () => {
-    const streamed: ChatMessage[] = [STREAMED_AGENT("It's 3pm in Tokyo.", "a-1")];
+    const streamed: ChatMessage[] = [
+      STREAMED_AGENT("It's 3pm in Tokyo.", "a-1"),
+    ];
     const db: ChatMessage[] = [DB_AGENT("It's 3pm in Tokyo.", 5)];
 
     const merged = reconcileStreamedWithDb(streamed, db);
 
     expect("content" in merged[0] ? merged[0].content : "").toBe(
       "It's 3pm in Tokyo.",
+    );
+  });
+
+  it("never adopts DB content into a user bubble, even when the DB row is normalized-longer", () => {
+    // A user bubble's DB row can carry a legacy `<file>` path-ref wrapper
+    // that the rendered streamed bubble never shows. The agent-truncation
+    // adoption above must not generalize to user bubbles, or a longer DB
+    // row silently replaces the user's own typed text with that wrapper.
+    const streamed: ChatMessage[] = [STREAMED_USER("read foo.txt", "u-1")];
+    const db: ChatMessage[] = [
+      DB_USER("read foo.txt <file>/Users/me/private/foo.txt</file>", 1),
+    ];
+
+    const merged = reconcileStreamedWithDb(streamed, db);
+
+    expect(merged).toHaveLength(1);
+    expect(merged[0].id).toBe("u-1");
+    expect("content" in merged[0] ? merged[0].content : "").toBe(
+      "read foo.txt",
     );
   });
 

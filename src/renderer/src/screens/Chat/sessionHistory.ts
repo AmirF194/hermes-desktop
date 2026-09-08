@@ -299,9 +299,13 @@ function mergeDbMetadataIntoStreamed(
   // The DB row can hold more complete text than a stream cut short mid-answer.
   // Compare normalized text, not raw length: a legacy `<file>` wrapper makes
   // the DB row raw-longer even when `attachments` already covers it.
+  // Agent bubbles only: a user bubble's DB row can carry that same `<file>`
+  // wrapper as a path-ref attachment marker, and adopting it here would
+  // overwrite the user's own typed text with an absolute local file path.
   const content =
+    s.role === "agent" &&
     normalizeBubbleContentForMatch(d.content).length >
-    normalizeBubbleContentForMatch(s.content).length
+      normalizeBubbleContentForMatch(s.content).length
       ? d.content
       : undefined;
   if (
