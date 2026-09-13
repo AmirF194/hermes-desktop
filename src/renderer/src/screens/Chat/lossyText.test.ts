@@ -53,6 +53,22 @@ describe("isLossyChunkCopy", () => {
     expect(isLossyChunkCopy("longer than the full", "short full")).toBe(false);
   });
 
+  // @lat: [[chat-commands#Slash command execution#Completion text reconciliation#Unicode length and coverage guards]]
+  it.each([
+    { partialLength: 11, gapLength: 3, expected: false },
+    { partialLength: 12, gapLength: 29, expected: false },
+    { partialLength: 12, gapLength: 28, expected: true },
+  ])(
+    "checks $partialLength supplementary characters with a $gapLength-character gap",
+    ({ partialLength, gapLength, expected }) => {
+      const partial = "𠀀".repeat(partialLength);
+      const full =
+        "𠀀".repeat(6) + "x".repeat(gapLength) + "𠀀".repeat(partialLength - 6);
+      expect(full.includes(partial)).toBe(false);
+      expect(isLossyChunkCopy(partial, full)).toBe(expected);
+    },
+  );
+
   it("allows a short final run (trailing punctuation survives chunking)", () => {
     // Runs: "Hello there my friend" + trailing "!" (1 char, final run).
     expect(

@@ -69,9 +69,12 @@ export function isLossyChunkCopy(
   }: { minRun?: number; minLength?: number; minCoverage?: number } = {},
 ): boolean {
   if (!partial || !full) return false;
-  if (partial.length < minLength) return false;
-  if (partial.length >= full.length) return false;
-  if (partial.length < minCoverage * full.length) return false;
+  // Admission and matching use the same Unicode code-point metric.
+  const partialChars = [...partial];
+  const fullChars = [...full];
+  if (partialChars.length < minLength) return false;
+  if (partialChars.length >= fullChars.length) return false;
+  if (partialChars.length < minCoverage * fullChars.length) return false;
 
   const run =
     minRun ??
@@ -86,9 +89,6 @@ export function isLossyChunkCopy(
   // for exactly the dense-script text this run length exists to protect.
   // Work over code-point arrays instead so `probeLen`/`len` below are
   // character counts, matching what `run` means.
-  const partialChars = [...partial];
-  const fullChars = [...full];
-
   let i = 0; // position in partialChars
   let j = 0; // position in fullChars
   while (i < partialChars.length) {
