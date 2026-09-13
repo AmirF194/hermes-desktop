@@ -134,7 +134,7 @@ export function parseCronListOutput(output: string): CronJob[] {
       schedule: current.fields.Schedule || "?",
       prompt: current.fields.Prompt || "",
       state,
-      enabled: state !== "paused",
+      enabled: state === "active",
       next_run_at: current.fields["Next run"] || null,
       last_run_at: lastRun.last_run_at,
       last_status: lastRun.last_status,
