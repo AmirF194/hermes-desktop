@@ -18,7 +18,7 @@ mount_spa(app)
       // The boundary supplies the same context-local home API as upstream.
       // Execute the actual injected handlers against separate files on disk.
       const script = String.raw`
-import contextvars, json, sys, tempfile, types
+import contextvars, json, secrets, sys, tempfile, time, types
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -51,6 +51,11 @@ with tempfile.TemporaryDirectory() as temporary:
     default_row = hermes_one_get_model_library("default")["models"][0]
     current_row = hermes_one_get_model_library("current")["models"][0]
     default_path = _hermes_one_model_library_path("default")
+    for endpoint in ["https://host/TenantA", "https://host/tenanta", "https://HOST/TenantA/"]:
+        hermes_one_add_model_library_row({
+            "provider": "custom", "model": "same-model", "baseUrl": endpoint
+        }, "default")
+    saved_default = json.loads(default_path.read_text())
     (root / "config.yaml").unlink()
     failed = _hermes_one_current_model_row("default")
     print(json.dumps({
@@ -60,6 +65,8 @@ with tempfile.TemporaryDirectory() as temporary:
         "failedRead": failed,
         "homeRestored": get_hermes_home() == process_home,
         "currentAfterFailure": _hermes_one_current_model_row()["contextLength"],
+        "rootEndpoints": [row["baseUrl"] for row in saved_default],
+        "namedAttachments": json.loads((process_home / "models.json").read_text()),
     }))
 `;
       const output = execFileSync("python3", ["-c", script], {
@@ -73,6 +80,8 @@ with tempfile.TemporaryDirectory() as temporary:
         failedRead: null,
         homeRestored: true,
         currentAfterFailure: 1000000,
+        rootEndpoints: ["https://host/TenantA", "https://host/tenanta"],
+        namedAttachments: [],
       });
     },
   );

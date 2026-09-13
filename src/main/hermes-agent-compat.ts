@@ -86,11 +86,57 @@ def _hermes_one_short_model_label(model):
     return (text.rsplit("/", 1)[-1] if text else "") or text
 
 
+def _hermes_one_normalize_url_path(path):
+    # Match the WHATWG URL path shortening used by the desktop's new URL().
+    # Percent-encoded dot segments are structural, but every other encoded
+    # segment and repeated slash remains part of the endpoint identity.
+    segments = str(path or "").split("/")
+    normalized = []
+    for segment in segments:
+        folded = segment.lower()
+        if folded in (".", "%2e"):
+            continue
+        if folded in ("..", ".%2e", "%2e.", "%2e%2e"):
+            if len(normalized) > 1:
+                normalized.pop()
+            continue
+        normalized.append(segment)
+    return "/".join(normalized)
+
+
+def _hermes_one_normalize_base_url(value):
+    from urllib.parse import urlsplit, urlunsplit
+    text = str(value or "").strip()
+    if not text:
+        return ""
+    try:
+        parsed = urlsplit(text)
+        if not parsed.scheme or not parsed.hostname:
+            return text.rstrip("/")
+        scheme = parsed.scheme.lower()
+        hostname = parsed.hostname.lower()
+        if ":" in hostname:
+            hostname = f"[{hostname}]"
+        credentials = ""
+        if parsed.username is not None:
+            credentials = parsed.username
+            if parsed.password is not None:
+                credentials += f":{parsed.password}"
+            credentials += "@"
+        port = parsed.port
+        default_port = (scheme == "http" and port == 80) or (scheme == "https" and port == 443)
+        netloc = credentials + hostname + (f":{port}" if port is not None and not default_port else "")
+        path = _hermes_one_normalize_url_path(parsed.path).rstrip("/")
+        return urlunsplit((scheme, netloc, path, parsed.query, parsed.fragment))
+    except ValueError:
+        return text.rstrip("/")
+
+
 def _hermes_one_model_key(row):
     return (
         str(row.get("provider", "")).strip().lower(),
         str(row.get("model", "")).strip().lower(),
-        str(row.get("baseUrl", row.get("base_url", ""))).strip().rstrip("/").lower(),
+        _hermes_one_normalize_base_url(row.get("baseUrl", row.get("base_url", ""))),
     )
 
 
@@ -208,7 +254,7 @@ def hermes_one_add_model_library_row(body: Dict[str, Any], profile: Optional[str
     base_url = str(body.get("baseUrl", body.get("base_url", "")) or "").strip()
     name = str(body.get("name", "") or "").strip() or _hermes_one_short_model_label(model) or provider
     rows = _hermes_one_read_model_library(profile)
-    key = (provider.lower(), model.lower(), base_url.rstrip("/").lower())
+    key = (provider.lower(), model.lower(), _hermes_one_normalize_base_url(base_url))
     for row in rows:
         if _hermes_one_model_key(row) == key:
             return row
