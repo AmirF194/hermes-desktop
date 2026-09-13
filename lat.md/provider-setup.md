@@ -167,6 +167,12 @@ DashScope is a native provider rather than a compatible/custom endpoint, but it 
 
 Ids the agent can't resolve by id are listed in `OPENAI_COMPATIBLE_BASE_URLS` ([[src/renderer/src/constants.ts]]) — openai, perplexity, and every `LOCAL_PRESETS` chip (local servers + remote endpoints like groq, deepseek, atlascloud, mistral, …). This map MUST contain every preset id, or selecting that chip mis-routes; a test in `tests/constants.test.ts` enforces it. Selecting one autofills its base URL and shows the base-URL field; on save it is persisted as `provider: custom` + `base_url`, which the gateway accepts and uses to host-derive the API key (`runtime_provider._host_derived_api_key`, e.g. `api.groq.com` → `GROQ_API_KEY`). `displayProviderFromConfig` reverse-maps a stored `custom` + known base URL back to the brand id so the dropdown re-selects it on load. Native providers (the gateway hardcodes their base URL) clear the field instead.
 
+#### Explicit endpoint ports
+
+An explicit non-default port, including zero, remains part of endpoint identity in desktop and injected Dashboard comparisons. Only the default HTTP and HTTPS ports are omitted.
+
+[[tests/hermes-agent-compat.test.ts]] executes the injected Python normalizer against [[src/shared/model-endpoint.ts#normalizeModelEndpointUrl]] to verify that a port is never discarded merely because its numeric value is falsey.
+
 ## Switching providers rewrites the transport (`api_mode`)
 
 Activating a model must rewrite or clear `model.api_mode`, or a stale protocol from the previous model routes the new endpoint over the wrong transport — dropping connections when switching OpenAI- and Anthropic-compatible custom endpoints.

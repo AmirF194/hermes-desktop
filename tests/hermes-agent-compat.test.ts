@@ -188,6 +188,22 @@ mount_spa(app)
     );
   });
 
+  // @lat: [[provider-setup#Provider setup#Models live under each provider (OpenCode-style)#Transport-consistent attachment identity#Explicit endpoint ports]]
+  itPython("preserves explicit endpoint ports in both runtimes", () => {
+    const values = [
+      "http://localhost:0/v1",
+      "http://localhost/v1",
+      "http://localhost:80/v1",
+      "https://localhost:443/v1",
+      "https://localhost:8443/v1",
+    ];
+    const normalized = normalizeWithInjectedPython(values);
+    expect(normalized).toEqual(
+      values.map((value) => normalizeModelEndpointUrl(value)),
+    );
+    expect(normalized[0]).not.toBe(normalized[1]);
+  });
+
   it("does not install the model library endpoint twice", () => {
     const source = `
 @app.post("/api/model/set")

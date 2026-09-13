@@ -108,7 +108,7 @@ def _hermes_one_normalize_base_url(value):
             credentials += "@"
         port = parsed.port
         default_port = (scheme == "http" and port == 80) or (scheme == "https" and port == 443)
-        netloc = credentials + hostname + (f":{port}" if port and not default_port else "")
+        netloc = credentials + hostname + (f":{port}" if port is not None and not default_port else "")
         path = _hermes_one_normalize_url_path(parsed.path).rstrip("/")
         return urlunsplit((scheme, netloc, path, parsed.query, parsed.fragment))
     except ValueError:
