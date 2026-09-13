@@ -313,12 +313,60 @@ describe("remote session REST bridge", () => {
     ]);
   });
 
-  it("sends Authorization: Bearer alongside the legacy session token header", async () => {
-    await remoteListSessions(config(), 2, 3);
+  // @lat: [[remote-dashboard-oauth#Test specifications#Session token compatibility]]
+  it.each([
+    ["authorization", "Bearer test-token"],
+    ["x-hermes-session-token", "test-token"],
+  ])("authenticates a server accepting only %s", async (header, expected) => {
+    const originalHandler = server.listeners("request")[0];
+    server.removeListener("request", originalHandler);
+    server.on("request", (req, res) => {
+      if (req.headers[header] !== expected) {
+        res.writeHead(401).end();
+        return;
+      }
+      originalHandler(req, res);
+    });
+
+    await expect(remoteListSessions(config(), 2, 3)).resolves.toEqual([
+      expect.objectContaining({ id: "sess-list" }),
+    ]);
 
     expect(requests[0]).toMatchObject({
       token: "test-token",
       authorization: "Bearer test-token",
+    });
+  });
+
+  // @lat: [[remote-dashboard-oauth#Test specifications#Reverse proxy authentication]]
+  it("preserves URL Basic auth alongside the dashboard session token", async () => {
+    const remoteUrl = new URL(`${baseUrl}/api`);
+    remoteUrl.username = "proxy-user";
+    remoteUrl.password = "p@ss:word";
+    const basic = `Basic ${Buffer.from("proxy-user:p@ss:word").toString("base64")}`;
+    const originalHandler = server.listeners("request")[0];
+    server.removeListener("request", originalHandler);
+    server.on("request", (req, res) => {
+      if (
+        req.headers.authorization !== basic ||
+        req.headers["x-hermes-session-token"] !== "test-token"
+      ) {
+        res.writeHead(401).end();
+        return;
+      }
+      originalHandler(req, res);
+    });
+
+    await expect(
+      remoteListSessions(
+        { ...config(), remoteUrl: remoteUrl.toString() },
+        2,
+        3,
+      ),
+    ).resolves.toEqual([expect.objectContaining({ id: "sess-list" })]);
+    expect(requests[0]).toMatchObject({
+      authorization: basic,
+      token: "test-token",
     });
   });
 
