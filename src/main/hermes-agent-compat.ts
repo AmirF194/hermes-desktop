@@ -142,7 +142,7 @@ def _hermes_one_write_model_library(rows, profile=None):
 
 def _hermes_one_current_model_row(profile=None):
     requested = str(profile or "").strip().lower()
-    if not requested or requested in ("current", "default"):
+    if not requested or requested == "current":
         try:
             cfg = load_config()
         except Exception:

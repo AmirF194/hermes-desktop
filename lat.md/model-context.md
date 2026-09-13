@@ -20,6 +20,12 @@ The context gauge resolves its window size as: connection-owned config override 
 
 For local connections, [[src/main/model-discovery.ts#getModelContextWindow]] consults [[src/main/config.ts#getModelContextLengthOverride]]. For SSH and Remote connections, the IPC route reads the active model config from that connection and [[src/main/model-context.ts#resolveActiveModelContextWindow]] applies its override only when the requested model still matches, so a delayed response cannot leak the previous model's context window. Missing or invalid overrides fall through to the existing `/models` lookup and finally the renderer heuristic. DeepSeek V4 identifiers have a 1M static fallback; older DeepSeek aliases retain their 128K fallback.
 
+## Dashboard default profile isolation
+
+An explicit `default` query reads both the root model library and root config, even when the Dashboard process runs from a named profile. Omitted or `current` queries retain that process's profile.
+
+The compatibility handler uses upstream's context-local Hermes home override for every explicit profile, including `default`, and resets it after successful or failed config reads. [[tests/hermes-agent-compat-profiles.test.ts]] executes the injected handlers with separate root and named-profile files to verify matching library/config scope and recovery after a read failure.
+
 ## Occupancy estimate when the provider omits usage
 
 The gauge's numerator resolves as: exact payload counts (`context_used`, else prompt tokens) → a chars/4 transcript estimate → the previous turn's value. Without the estimate the gauge went blank on providers that return no usage at all (#789).
