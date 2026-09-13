@@ -36,6 +36,12 @@ Stable and beta release jobs import the Developer ID certificate into a workflow
 
 `scripts/import-macos-certificate.sh` creates a random keychain password, adds the keychain to the user search list, imports the `.p12` with `CSC_KEY_PASSWORD`, and grants `codesign` access with the distinct keychain password required by macOS 26.6. Electron Builder receives only `CSC_KEYCHAIN`, so it cannot recreate the password mix-up. Both architecture jobs run even if one fails, verify that a Developer ID Application identity exists before packaging, and delete the temporary keychain afterward. [[tests/macos-signing.test.ts]] exercises keychain discovery, password separation, and credential cleanup; [[tests/release-artifacts.test.ts]] prevents either release channel from bypassing the staging flow.
 
+#### Identity output consumption
+
+Signing verification consumes the complete identity list before deciding success, so early pipe closure cannot reject a valid Developer ID identity under `pipefail`.
+
+`scripts/import-macos-certificate.sh` retains failure propagation from the identity command and requires a matching identity. [[tests/macos-signing.test.ts]] exercises short output and a list exceeding pipe capacity, alongside password separation and credential cleanup.
+
 ### Native module packaging
 
 Stable and beta macOS builds verify the exact architecture-specific `better-sqlite3` prebuild that the packaged runtime loads.
