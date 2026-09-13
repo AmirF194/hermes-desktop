@@ -21,6 +21,10 @@ import { getActiveProfileNameSync, profileHome, stripAnsi } from "./utils";
 import { setupAskpass, AskpassHandle } from "./askpass";
 import { precacheSudoCredentials } from "./sudoCreds";
 import { HIDDEN_SUBPROCESS_OPTIONS } from "./process-options";
+import {
+  INSTALLER_VERIFICATION_FAILED,
+  verifiedInstallerCommand,
+} from "./installer-download";
 
 const IS_WINDOWS = process.platform === "win32";
 
@@ -938,28 +942,9 @@ export async function runInstall(
       // don't inherit the terminal environment.
       const shellProfile = getShellProfile(home);
 
-      // [SECURITY 2026-07-03] Pin the installer to a specific commit and verify
-      // its SHA-256 before executing, instead of piping a mutable `main` branch
-      // straight into bash. To update: bump PINNED_INSTALL_SHA to the reviewed
-      // commit and set EXPECTED_INSTALL_SHA256 to the sha256 of scripts/install.sh
-      // at that commit ( curl -fsSL <raw-url> | sha256sum ).
-      const PINNED_INSTALL_SHA = "528159f7aa6a0c234c61685f552cb45f22849c52";
-      const EXPECTED_INSTALL_SHA256 =
-        "a93c65b01ea392e179cf872e182bd01a2b65c0c15f17833e9f9569033ef10e07";
-      const pinnedInstallUrl = `https://raw.githubusercontent.com/NousResearch/hermes-agent/${PINNED_INSTALL_SHA}/scripts/install.sh`;
-      const verifiedInstall = [
-        "set -e",
-        'TMP="$(mktemp)"',
-        `curl -fsSL ${pinnedInstallUrl} -o "$TMP"`,
-        // portable checksum: sha256sum (Linux) or shasum -a 256 (macOS)
-        `ACTUAL="$( (sha256sum "$TMP" 2>/dev/null || shasum -a 256 "$TMP") | awk '{print $1}' )"`,
-        `if [ "$ACTUAL" != "${EXPECTED_INSTALL_SHA256}" ]; then echo "hermes install.sh checksum mismatch (expected ${EXPECTED_INSTALL_SHA256}, got $ACTUAL) - aborting" >&2; rm -f "$TMP"; exit 87; fi`,
-        'bash "$TMP" --skip-setup',
-        'rm -f "$TMP"',
-      ].join("\n");
       const installCmd = [
         shellProfile ? `source "${shellProfile}" 2>/dev/null;` : "",
-        verifiedInstall,
+        verifiedInstallerCommand(),
       ].join("\n");
 
       const basePath = getEnhancedPath();
@@ -985,6 +970,14 @@ export async function runInstall(
       });
 
       proc.on("close", (code) => {
+        if (code === INSTALLER_VERIFICATION_FAILED) {
+          reject(
+            new Error(
+              "Installer download or checksum verification failed. Installation was not run.",
+            ),
+          );
+          return;
+        }
         if (code === 0) {
           emit("\nInstallation complete!\n");
           resolve();
