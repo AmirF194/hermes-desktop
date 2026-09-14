@@ -114,6 +114,8 @@ The Profiles page lists every workspace as table-style rows and creates new ones
 
 The profile modal's inline name editor saves on Enter/blur, but Escape is a real cancel path: it restores the current saved name and suppresses the blur-save that browsers fire as the input unmounts.
 
+Long profile lists scroll within the Profiles page. The table keeps its full content height so its rounded-corner clipping cannot hide rows below the viewport; wheel and keyboard scrolling can reach the final profile and its actions.
+
 ## Office profile labels
 
 The Office scene shows each profile's user-facing name while keeping profile ids stable for routing.
