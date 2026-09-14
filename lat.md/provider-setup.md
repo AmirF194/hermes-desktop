@@ -212,3 +212,9 @@ The Local/Remote preset chips are also branded: each renders the same `BrandLogo
 When live OAuth discovery is unavailable, MiniMax keeps a usable model list aligned with Hermes Agent’s curated OAuth choices.
 
 [[src/main/model-discovery.ts#discoverProviderModels]] falls back to `MiniMax-M3`, `MiniMax-M2.7`, and `MiniMax-M2.7-highspeed` if the Python query fails. Regression coverage preserves all three entries; successful live discovery still takes precedence.
+
+## Novita provider preset
+
+Novita is available as a remote OpenAI-compatible preset, with a dedicated API-key field and the same endpoint used by Hermes Agent.
+
+The desktop stores the model as `custom` at `https://api.novita.ai/openai/v1`. Setup, the configured-provider picker, installer readiness, and runtime key lookup use `NOVITA_API_KEY`; provider branding identifies the endpoint as NovitaAI. The shared URL mapping is covered alongside the other supported commercial endpoints.
