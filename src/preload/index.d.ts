@@ -35,6 +35,10 @@ import type {
   MessagingPlatformUpdate,
 } from "../shared/messaging-platforms";
 import type { ChatToolEvent } from "../shared/chat-stream";
+import type {
+  ApprovalChoice,
+  ChatApprovalRequest,
+} from "../shared/chat-approval";
 import type { GpuPreferenceMode, GpuStatus } from "../shared/gpu";
 import type { AgentCapabilitySnapshot } from "../shared/agent-capabilities";
 import type { SessionLocation } from "../shared/session-location";
@@ -564,6 +568,14 @@ interface HermesAPI {
     ) => void,
   ) => () => void;
   respondClarify: (requestId: string, answer: string) => Promise<boolean>;
+  onApprovalRequest: (
+    callback: (runId: string, req: ChatApprovalRequest) => void,
+  ) => () => void;
+  respondApproval: (
+    requestId: string,
+    choice: ApprovalChoice,
+    runId: string,
+  ) => Promise<boolean>;
 
   // Gateway
   startGateway: () => Promise<GatewayStartResult>;
