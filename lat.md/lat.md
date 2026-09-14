@@ -14,6 +14,7 @@ This directory defines the high-level concepts, business logic, and architecture
 - [[loading-indicators]] — the thinking-orbs dotted-orb loaders behind every loading state, and the OrbLoader wrapper that pins dark/light from the Hermes theme registry instead of the library's auto-detection.
 - [[window-chrome]] — the browser-style title bar where open-conversation tabs sit on top of the window drag region, clickable while empty space still drags.
 - [[desktop-updates]] — GitHub release checks, startup upgrade button behavior, and the Settings auto-upgrade preference.
+- [[desktop-security]] — verified Unix bootstrap execution and safe rendering of runtime provider names.
 - [[agent-capabilities]] — capability-based compatibility between the independent desktop and system-installed Hermes Agent, including bounded runtime evidence and update gating.
 - [[connections]] — the versioned main-process connection registry, stable active connection identity, and lossless migration from the legacy singleton configuration.
 - [[sidebar-navigation]] — the recent-sessions list under the Chat nav item, capped at five with a "Show more" button that opens the full session list in a modal.
@@ -33,3 +34,4 @@ This directory defines the high-level concepts, business logic, and architecture
 - [[office-interactions]] — space representatives: interactive bank tellers whose menu runs account status, balances, and account creation against the hermes-one backend for a chosen agent; the extensible pattern for future spaces (showroom sales, building space).
 - [[office-world-actions]] — chat-commanded errands: the agent's LLM emits world-action blocks from the office chat, its avatar walks the trip route to the bank/showroom, and the rep modal auto-opens running the requested action on arrival.
 - [[mcp-servers]] — add / edit / remove / enable / test MCP servers from the Capabilities → MCP tab; the shared add+edit modal and the in-place atomic `updateMcpServer` upsert (config.yaml locally, gateway REST in Remote/SSH).
+- [[scheduled-jobs]] — schedule state normalization across local files, remote API responses, and named SSH profiles.

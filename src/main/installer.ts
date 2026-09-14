@@ -21,6 +21,10 @@ import { getActiveProfileNameSync, profileHome, stripAnsi } from "./utils";
 import { setupAskpass, AskpassHandle } from "./askpass";
 import { precacheSudoCredentials } from "./sudoCreds";
 import { HIDDEN_SUBPROCESS_OPTIONS } from "./process-options";
+import {
+  INSTALLER_VERIFICATION_FAILED,
+  verifiedInstallerCommand,
+} from "./installer-download";
 
 const IS_WINDOWS = process.platform === "win32";
 
@@ -980,10 +984,11 @@ export async function runInstall(
       // then run the official install script. Electron apps launched from Finder
       // don't inherit the terminal environment.
       const shellProfile = getShellProfile(home);
+
       const installCmd = [
         shellProfile ? `source "${shellProfile}" 2>/dev/null;` : "",
-        "curl -fsSL https://raw.githubusercontent.com/NousResearch/hermes-agent/main/scripts/install.sh | bash -s -- --skip-setup",
-      ].join(" ");
+        verifiedInstallerCommand(),
+      ].join("\n");
 
       const basePath = getEnhancedPath();
       const proc = spawn("bash", ["-c", installCmd], {
@@ -1008,6 +1013,14 @@ export async function runInstall(
       });
 
       proc.on("close", (code) => {
+        if (code === INSTALLER_VERIFICATION_FAILED) {
+          reject(
+            new Error(
+              "Installer download or checksum verification failed. Installation was not run.",
+            ),
+          );
+          return;
+        }
         if (code === 0) {
           emit("\nInstallation complete!\n");
           resolve();

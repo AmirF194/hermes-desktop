@@ -148,6 +148,14 @@ The left nav is two labelled groups — **General** (Appearance, Language, Notif
 
 The grouped Appearance preferences use one shared logical text/control grid in [[src/renderer/src/components/settings/AppearancePane.tsx]], so translated labels, wrapped hints, and differently sized controls keep a stable column and vertical alignment. The control column wraps long segment labels, stacks below the copy in narrow containers, and follows document direction for Arabic and Hebrew instead of relying on physical left/right positioning.
 
+### Migration path rendering
+
+Migration banners display filesystem paths as text inside trusted localized markup, preserving the exact path without interpreting it as HTML.
+
+[[src/main/installer.ts#checkOpenClawExists]] returns the raw discovered path; filesystem names may contain HTML-significant characters. [[src/renderer/src/components/settings/DataPane.tsx#DataPane]] escapes that value at the HTML rendering boundary before translation interpolation. The path used for filesystem operations remains unchanged.
+
+[[src/renderer/src/components/settings/DataPane.test.tsx]] exercises the production translations across every supported locale, checking markup-shaped paths, literal entities, whitespace, and translation-like text. [[tests/installer-utils.test.ts]] confirms that a real populated POSIX install with HTML-significant path characters reaches discovery unchanged.
+
 ### Long translated preference layout
 
 The Appearance preference markup and stylesheet must retain a shared responsive grid, shrinkable text/control cells, and wrapping segmented controls so long translations cannot restore the original independent-row flex behavior.
